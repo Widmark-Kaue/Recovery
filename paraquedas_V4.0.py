@@ -74,7 +74,7 @@ def componentes(d, caps):
         Diâmetro do caps do paraquedas, metros.
     
     """
-    Cs = 1.2*d #Cálculo do comprimento dos cabos de sustentação
+    Cs = 1.2*d #Cálculo do comprimento dos cabos de suspensão
     if (caps == True):
         c = 0.2*d  #Cálculo do diâmetro do caps do paraquedas
     else:
@@ -260,7 +260,7 @@ def main(m, Vc, w = 10, Ap = 1000, Caps = True, Ret = False, Prt = True):
     Fd_t : Function
         Força de arrasto em função do tempo considerando o foguete em queda livre.
     Fd_h: Function
-        Força de arrasto em função da altura em considerando o foguete em queda livre.
+        Força de arrasto em função da altura considerando o foguete em queda livre.
     """   
     
 ######################################Constantes############################################
@@ -319,7 +319,7 @@ def main(m, Vc, w = 10, Ap = 1000, Caps = True, Ret = False, Prt = True):
     if(Prt == True):
         print("\nDimensionamento dos componentes")
         print("Diâmetro nominal do velame:",D[0],"metros")
-        print("Comprimento dos cabos de sustentação:",C[0], "metros")
+        print("Comprimento dos cabos de suspensão:",C[0], "metros")
         if (Caps == True):
             print("Diâmetro do caps:",C[1], "metros")
         
