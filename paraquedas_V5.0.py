@@ -2,7 +2,7 @@
 """
 Created on Tue May 26 19:18:21 2020
 
-@author: Widmark Kauê
+@author: Widmark Kauê - Gerente de Recovery, Kosmos Rocketry
 """
 import numpy as np
 import scipy.interpolate as interpolate
@@ -261,13 +261,17 @@ def main(m, Vc, w = 10, Ap = 1000, Caps = True, Ret = False, Prt = True):
         Força de arrasto em função do tempo considerando o foguete em queda livre.
     Fd_h: Function
         Força de arrasto em função da altura considerando o foguete em queda livre.
+    V_m: Function
+        Velocidade terminal do foguete em função da massa considerando o diâmetro dimensionado.
+    V_dm: Function
+        Velocidade terminal do foguete em função da massa e do diâmetro.    
     """   
     
 ######################################Constantes############################################
     D = diameter(m, Vc) #resolvendo o cálculo para o diâmetro do paraquedas 
     #D: vetor com parâmetros de diâmetro, pressão, coeficiente de arrasto e aceleração da         gravidade nessa ordem.
     
-    A0 = np.pi*((D[0]/2)**2) #Área de referência do escoamento
+    A0 = np.pi*((D[0]/2)**2) #Área de referência do escoamento para o paraquedas dimensionado.
     W = np.arange(w - 1,w, 0.1) #Máxima velocidade terminal aceitada pelo projeto
         
     
@@ -334,9 +338,9 @@ def main(m, Vc, w = 10, Ap = 1000, Caps = True, Ret = False, Prt = True):
     
 ################################Função Vel. Terminal por massa##############################
     Den = A0*D[2]*D[1]
-    x = np.arange(m,2*m,0.1)
+    x = np.arange(m,2*m,0.1) #range de massas com parada em duas vezes a massa do foguete.
     Num =  lambda x: 2*x*D[3]
-    y = lambda x: np.sqrt(Num(x)/Den)
+    V_m = lambda x: np.sqrt(Num(x)/Den) #Função da vel. terminal por massa
     i = Den*(W**2)/(2*D[3]) #Pontos a serem mostradas do range de imprevisibilidade
     
     #Plot
@@ -344,14 +348,33 @@ def main(m, Vc, w = 10, Ap = 1000, Caps = True, Ret = False, Prt = True):
     plt.xlabel ('Massa (kg)')
     plt.ylabel ('Vel. Terminal (m/s)')
     plt.grid(True)
-    plt.plot(x,y(x))
-    plt.plot(i,y(i),'ro', label = "Range de imprevisibilidade.")
+    plt.plot(x,V_m(x))
+    plt.plot(i,V_m(i),'ro', label = "Range de imprevisibilidade.")
+    plt.legend()
+    
+    plt.show()
+
+#########################Função Vel. Terminal por massa e diâmetro##############################
+    d = np.linspace(D[0] - 0.3, D[0] + 0.3, 7) #range de diâmetros entre + ou - 0.1 do diâmetro nominal. 
+    d = d*100
+    A0_d = lambda d: np.pi*((d/2)**2) #área de referência do escoamento em função do diâmetro 
+    Den_d = lambda d: A0_d(d)*D[2]*D[1] 
+    V_dm = lambda x, d: np.sqrt(Num(x)/Den_d(d)) #Função da vel. terminal por massa
+    
+    #Plot
+    plt.title("Curvas de diâmetros")
+    plt.xlabel ('Massa (kg)')
+    plt.ylabel ('Vel. Terminal (m/s)')
+    plt.grid(True)
+    for j in range(len(d)):
+        d[j] = int(d[j])/100
+        plt.plot(x,V_dm(x, d[j]), label = str(d[j])) #Plota as funções para cada um dos diâmetros
     plt.legend()
     
     plt.show()
     
     if (Ret == True):
-        return D[0], C[0], C[1], A[0], A[1], Fv[0], Fv[1], Fd_t, Fd_h
+        return D[0], C[0], C[1], A[0], A[1], Fv[0], Fv[1], Fd_t, Fd_h, V_m, V_dm
     
     
     
