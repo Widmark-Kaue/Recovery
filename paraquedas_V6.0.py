@@ -157,7 +157,7 @@ def Fmax(m, Vc, S, D, Ap, v1 = 5, n0 = 14):
     """
 ############################Força de arrasto####################################
     
-    Fd = 0.5*D[2]*D[1]*(Vc**2)*S #Cálculo da força de arrasto em regime estacionário
+    Fd = 0.5*D[2]*D[1]*(Vc**2)*S #Cálculo da força de arrasto em regime permanent
     
     #####Função força de arrasto por altura#######
     V_h = lambda h: np.sqrt(2*D[3]*(h)) #Função velocidade em queda livre por distância do apogeu.
@@ -185,7 +185,7 @@ def Fmax(m, Vc, S, D, Ap, v1 = 5, n0 = 14):
     q = 0.5*p*(v1**2) #cálculo da pressão dinâmica
     tf = (n0*d)/v1 #cálculo do tempo de inflação do paraquedas
     Num = 2*m
-    Den = S*p*g*v1*tf
+    Den = D[2]*S*p*g*v1*tf
     A = Num/Den #cálculo do parâmetro balístico 
     
     #O fator de redução da força é encontrado utilizando um gráfico disponibilizado no livro do Knacke.
@@ -194,7 +194,7 @@ def Fmax(m, Vc, S, D, Ap, v1 = 5, n0 = 14):
     X1 = interpolate.interp1d(Mat[:,0],  Mat[:,1], kind = 'cubic') #Interpolação cúbica dos valores da matrix.
     x1 = X1(A) #Identificação do fator de choque do paraquedas.
     
-    Fo = S*q*x1 #Cálculo da força de abertura do paraquedas em lbf.
+    Fo = D[2]*S*q*x1 #Cálculo da força de abertura do paraquedas em lbf.
     Fo = Fo*4.44822 #Força de abertura do paraquedas em Newtons.
     
     # #####Função força de abertura por tempo#######
@@ -216,7 +216,7 @@ def Fmax(m, Vc, S, D, Ap, v1 = 5, n0 = 14):
     return Fo, Fd, Fd_h, Fd_t
     
     
-def main(m, Vc, w = 10, Ap = 1000, Caps = True, Ret = False, Prt = True):
+def main(m, Vc, w = 10, Ap = 1000, Caps = True, Ret = False, Prt = True, Plt = True):
     """
     Cálcula o diâmetro do paraquedas necessário para a velocide terminal de entrada e plota
     um gráfico com a relação Velocidade terminal por massa de projeto incluindo uma
@@ -245,18 +245,21 @@ def main(m, Vc, w = 10, Ap = 1000, Caps = True, Ret = False, Prt = True):
     -------
     D[0] : Float
           Diâmetro nominal do paraquedas, metros.
-    C[0] : Float
-        Comprimento dos cabos de suspensão, metros.
-    C[1] : Float
-        Diâmetro do caps do paraquedas, metros.
-    A[0] : Float
-        Área nominal do velame, m^2.
-    A[1] : Float
-        Área nominal do caps, m^2.
-    Fv[0] : Float
-        Força de abertura do paraquedas utilizando o método de Pflanz retirado do livros o Knacke, Newtons.
-    Fv[0] : Float
-        Força de arrasto do paraquedas em regime estacionário, Newtons.
+    C : Array
+        C[0] : Float
+            Comprimento dos cabos de suspensão, metros.
+        C[1] : Float
+            Diâmetro do caps do paraquedas, metros.
+    A : Array 
+        A[0] : Float
+            Área nominal do velame, m^2.
+        A[1] : Float
+            Área nominal do caps, m^2.
+    Fv[0:1] : Array
+            Fv[0] : Float
+                Força de abertura do paraquedas utilizando o método de Pflanz retirado do livros o Knacke, Newtons.
+            Fv[1] : Float
+                Força de arrasto do paraquedas em regime permanente, Newtons.
     Fd_t : Function
         Força de arrasto em função do tempo considerando o foguete em queda livre.
     Fd_h: Function
@@ -280,33 +283,37 @@ def main(m, Vc, w = 10, Ap = 1000, Caps = True, Ret = False, Prt = True):
     if(Prt == True):
         print("Esforços no paraquedas")
         print("Força de abertura do paraquedas:",Fv[0], "Newtons")
-        print("Força de arrasto em regime estacionário:",Fv[1], "Newtons")
+        print("Força de arrasto em regime permanente:",Fv[1], "Newtons")
         
     ###
     ##Função força de arrasto por distância do apogeu.
     Fd_h = Fv[2] #Recebe a função do vetor de forças
     H = np.arange(0,11)
-    #Plot
-    plt.title("Força de arrasto por Distância do apogeu")
-    plt.xlabel ('Distância (m)')
-    plt.ylabel ('Força de arrasto (N)')
-    plt.grid(True)
-    plt.plot(H,Fd_h(H),'r')
     
-    plt.show()
+    #Plot
+    if (Plt == True):
+        plt.title("Força de arrasto por Distância do apogeu")
+        plt.xlabel ('Distância (m)')
+        plt.ylabel ('Força de arrasto (N)')
+        plt.grid(True)
+        plt.plot(H,Fd_h(H),'r')
+        
+        plt.show()
+        
     ###
     
     ##Função força de arrasto por tempo.
     Fd_t = Fv[3] #Recebe a função do vetor de forças
     T = np.arange(0, 6, 1) #Cria um vetor com valores de tempo de 0 até 6s.
     #Plot
-    plt.title("Força de arrasto por tempo")
-    plt.xlabel ('Tempo (s)')
-    plt.ylabel ('Força de arrasto (N)')
-    plt.grid(True)
-    plt.plot(T,Fd_t(T),'g')
-    
-    plt.show()
+    if (Plt == True):
+        plt.title("Força de arrasto por tempo")
+        plt.xlabel ('Tempo (s)')
+        plt.ylabel ('Força de arrasto (N)')
+        plt.grid(True)
+        plt.plot(T,Fd_t(T),'g')
+        
+        plt.show()
     
     # ##Função força de abertura do paraquedas por tempo.
     # Fo_t = Fv[4]
@@ -344,15 +351,16 @@ def main(m, Vc, w = 10, Ap = 1000, Caps = True, Ret = False, Prt = True):
     i = Den*(W**2)/(2*D[3]) #Pontos a serem mostradas do range de imprevisibilidade
     
     #Plot
-    plt.title("Range de Massa ideal")
-    plt.xlabel ('Massa (kg)')
-    plt.ylabel ('Vel. Terminal (m/s)')
-    plt.grid(True)
-    plt.plot(x,V_m(x))
-    plt.plot(i,V_m(i),'ro', label = "Range de imprevisibilidade.")
-    plt.legend()
-    
-    plt.show()
+    if (Plt == True):
+        plt.title("Range de Massa ideal")
+        plt.xlabel ('Massa (kg)')
+        plt.ylabel ('Vel. Terminal (m/s)')
+        plt.grid(True)
+        plt.plot(x,V_m(x))
+        plt.plot(i,V_m(i),'ro', label = "Range de imprevisibilidade.")
+        plt.legend()
+        
+        plt.show()
 
 #########################Função Vel. Terminal por massa e diâmetro##############################
     d = np.linspace(D[0] - 0.3, D[0] + 0.3, 7) #range de diâmetros entre + ou - 0.1 do diâmetro nominal. 
@@ -362,19 +370,20 @@ def main(m, Vc, w = 10, Ap = 1000, Caps = True, Ret = False, Prt = True):
     V_dm = lambda x, d: np.sqrt(Num(x)/Den_d(d)) #Função da vel. terminal por massa
     
     #Plot
-    plt.title("Curvas de diâmetros")
-    plt.xlabel ('Massa (kg)')
-    plt.ylabel ('Vel. Terminal (m/s)')
-    plt.grid(True)
-    for j in range(len(d)):
-        d[j] = int(d[j])/100
-        plt.plot(x,V_dm(x, d[j]), label = str(d[j])) #Plota as funções para cada um dos diâmetros
-    plt.legend()
-    
-    plt.show()
+    if (Plt == True):
+        plt.title("Curvas de diâmetros")
+        plt.xlabel ('Massa (kg)')
+        plt.ylabel ('Vel. Terminal (m/s)')
+        plt.grid(True)
+        for j in range(len(d)):
+            d[j] = int(d[j])/100
+            plt.plot(x,V_dm(x, d[j]), label = str(d[j])) #Plota as funções para cada um dos diâmetros
+        plt.legend()
+        
+        plt.show()
     
     if (Ret == True):
-        return D[0], C[0], C[1], A[0], A[1], Fv[0], Fv[1], Fd_t, Fd_h, V_m, V_dm
+        return D[0], C, A, Fv[0:2], Fd_t, Fd_h, V_m, V_dm
     
     
     
