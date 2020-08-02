@@ -269,7 +269,7 @@ def Voo(V_h, mt, D, A0, Cd_f, S_f, R, Ap):
     V0 = V_h(R) #Determina a velocidade inicial do sistema de acordo com ruido do sensor.
     
     dvdt = lambda V, t: (k*(V)**2 + D[3]) #monta o modelo utilizado para a integração.
-    t0 = np.linspace(0,300,900) #dtermina um range de tempo de até 5 min.
+    t0 = np.linspace(0,300,900) #determina um range de tempo de até 5 min.
     V = integrate.odeint(dvdt, V0, t0) #Realiza a integração e retorna valores de velocidade para o range de tempo determinado. 
     
     #Nota: a função odeint retorna um array de tamanho (300,1), por conta de como a função de interpolação funciona 
@@ -383,7 +383,7 @@ def main(m, Vc, Cd_f, S_f, w = 10, Ap = 1000, R = 3, Caps = True, Ret = False, P
     
 ######################################Constantes############################################
     D = diameter(m, Vc) #resolvendo o cálculo para o diâmetro do paraquedas 
-    #D: vetor com parâmetros de diâmetro, densidade, coeficiente de arrasto e aceleração da         gravidade nessa ordem.
+    #D: vetor com parâmetros de diâmetro, densidade, coeficiente de arrasto e aceleração da gravidade nessa ordem.
     
     A0 = np.pi*((D[0]/2)**2) #Área de referência do escoamento para o paraquedas dimensionado.
     W = np.arange(w - 1,w, 0.1) #Máxima velocidade terminal aceitada pelo projeto
