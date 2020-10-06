@@ -164,15 +164,15 @@ def Fmax(m, Vc, S, D, Ap, v1 = 5, n0 = 14):
     """
 ############################Força de arrasto####################################
     
-    Fd = 0.5*D[2]*D[1]*(Vc**2)*S #Cálculo da força de arrasto em regime permanent
+    Fd = 0.5*D[2]*D[1]*(Vc**2)*S #Cálculo da força de arrasto em regime permanen
     
     #####Função pico força de arrasto por altura#######
     V_h = lambda h: np.sqrt(2*D[3]*(h)) #Função velocidade em queda livre por distância do apogeu.
-    Fd_h = lambda h :0.5*D[2]*D[1]*((V_h(h))**2)*S #Função força de arrasto por altura.
+    Fd_h = lambda h :0.5*D[2]*D[1]*((V_h(h))**2)*S #Função pico força de arrasto por altura.
     
     #####Função pico força de arrasto por tempo#######
     Vp_t = lambda t: -D[3]*t #Função velocidade em queda livre por tempo.
-    Fpd_t = lambda t: 0.5*D[2]*D[1]*((Vp_t(t))**2)*S #Função força de arrasto por altura.
+    Fpd_t = lambda t: 0.5*D[2]*D[1]*((Vp_t(t))**2)*S #Função pico de força de arrasto por altura.
     
     
 ###################Força de abertura do paraquedas##############################
@@ -250,7 +250,7 @@ def Voo(V_h, mt, D, A0, Cd_f, S_f, R, Ap):
     S_f : Float
         Área de referência de escoamento do foguete, m^2.
     R : Float
-        Ruido do sensor de eletrônica, metros.
+        Altura de implementação do paraquedas (distância do apogeu), metros.
     Ap : Float
         Apogeu estimado do foguete, metros.
 
@@ -264,6 +264,19 @@ def Voo(V_h, mt, D, A0, Cd_f, S_f, R, Ap):
         Função força de arrasto pelo tempo.
 
     """
+    ##Tempo para a altura de implementação do paraquedas##
+    h_t = lambda t:  Ap - 0.5*D[3]*(t**2) #função da altura pelo tempo em queda livre.
+    B = lambda t: h_t(t) - R #função para aplicar na bissecção
+    
+    a1 = b1 =  1 #Definindo  primeiro e segundo ponto do intervalo da bisseção.
+   
+        ##Encontrando onde a função muda de sinal 
+    while (B(b1)>0):
+        b1 = b1 + 10
+    
+    #encontrando tempo para atingir altura de implementação do foguete.
+    t1 = bisect(B, a1, b1) 
+    
     ##Velocidade de descida em função do tempo##
     k = (-D[1]*((Cd_f*S_f) + (D[2]*A0)))/(2*mt) #Cálcula uma constante padrão durante todo processo de integração
     V0 = V_h(R) #Determina a velocidade inicial do sistema de acordo com ruido do sensor.
@@ -281,16 +294,16 @@ def Voo(V_h, mt, D, A0, Cd_f, S_f, R, Ap):
     Fd_t = lambda t: 0.5*D[2]*D[1]*(V_t(t)**2)*A0 
     
     ##Altura em que se encontra o sistema em função do tempo.##
-    Hi = Ap - R #detrmina a altura inicial a partir do ruido do sensor.
+    Hi = Ap - R #detrmina a altura de implementação do paraquedas em relação ao solo.
     
     #Nota:Como a função quad retorna  uma tupla, o valor da integral e o erro, não é possível realizar operações aritiméticas 
     #com ela. Dessa forma, é cáculado primeiramente a tupla e depois acessado somente o valor da integral. 
     Quad = lambda t: integrate.quad(V_t,0,t) #Cálculo da integral e retorno da tupla.
     H_t = lambda t: Hi - Quad(t)[0] #Monta a função da altura pelo tempo.
     
-    return H_t, V_t, Fd_t
+    return  h_t, H_t, V_t, Fd_t, t1
     
-def main(m, Vc, Cd_f, S_f, w = 10, Ap = 1000, R = 3, Caps = True, Ret = False, Prt = True, Plt = True):
+def main(m, Vc, Cd_f, S_f, w = 10, Ap = 1000, R = 500, Caps = True, Ret = False, Prt = True, Plt = True):
     """
     Cálcula o diâmetro nominal do paraquedas necessário para a massa e a velocidade terminal de
     entrada.
@@ -336,7 +349,7 @@ def main(m, Vc, Cd_f, S_f, w = 10, Ap = 1000, R = 3, Caps = True, Ret = False, P
     Ap : Float, optional
         Apogeu esperado do foguete, metros. The default is 1000.
     R: Float, optional.
-        Distância do apogeu de implementação do paraquedas por conta do Ruido do sensor de aviônica, metros. 
+        Altura de implementação do paraquedas (distância do apogeu), metros.
     Caps : Boolean, optional
         Condição de falso ou verdadeiro para a existência do caps no paraquedas. The default is True.
     Ret : Boolean, optional
@@ -373,6 +386,8 @@ def main(m, Vc, Cd_f, S_f, w = 10, Ap = 1000, R = 3, Caps = True, Ret = False, P
         Velocidade terminal do foguete em função da massa considerando o diâmetro dimensionado.
     V_dm: Function
         Velocidade terminal do foguete em função da massa e do diâmetro.
+    h_t: Function
+        Altura do sistema em queda livre em função do tempo.
     H_t: Function
         Altura do sistema em função do tempo.
     V_t: Function
@@ -383,7 +398,7 @@ def main(m, Vc, Cd_f, S_f, w = 10, Ap = 1000, R = 3, Caps = True, Ret = False, P
     
 ######################################Constantes############################################
     D = diameter(m, Vc) #resolvendo o cálculo para o diâmetro do paraquedas 
-    #D: vetor com parâmetros de diâmetro, densidade, coeficiente de arrasto e aceleração da gravidade nessa ordem.
+    #D: vetor com parâmetros de diâmetro, densidade, coeficiente de arrasto e aceleração da         gravidade nessa ordem.
     
     A0 = np.pi*((D[0]/2)**2) #Área de referência do escoamento para o paraquedas dimensionado.
     W = np.arange(w - 1,w, 0.1) #Máxima velocidade terminal aceitada pelo projeto
@@ -428,10 +443,11 @@ def main(m, Vc, Cd_f, S_f, w = 10, Ap = 1000, R = 3, Caps = True, Ret = False, P
 ###############################Dinâmica de Voo do paraquedas###############################
     V_h = Fv[4] #Velocidade do sistema em queda livre em função da altura
     wid = Voo(V_h, m, D, A0, Cd_f, S_f, R, Ap) #vetor com funções da dinâmica de voo
-    H_t = wid[0] #função da altura pelo tempo
-    V_t = wid[1] #função da velocidade pelo tempo
-    Fd_t = wid[2] #função da força de arrasto pelo tempo   
-    
+    h_t = wid[0] #função da altura pelo tempo antes da implementação do paraquedas.
+    H_t = wid[1] #função da altura pelo tempo com o paraquedas aberto.
+    V_t = wid[2] #função da velocidade pelo tempo
+    Fd_t = wid[3] #função da força de arrasto pelo tempo   
+    tr = wid[4] #tempo para atingir a altura de implementação do paraquedas.
     ###
     
     #####Tempo para o sistema atingir o regime permanente e atingir o solo#####
@@ -457,13 +473,13 @@ def main(m, Vc, Cd_f, S_f, w = 10, Ap = 1000, R = 3, Caps = True, Ret = False, P
     t = np.linspace(0, t1 + 0.5*t1, 100) #Array de valores de tempos para plotagem de gráficos.
     
     t2 = bisect(T2, a2, b2) #Aplicação da bissecção - tempo para atingir o solo.
-    t0 = np.linspace(0, t2,100) #Array de valores de tempos para plotagem de gráficos.
+    t0 = np.linspace(0, t2+tr,100) #Array de valores de tempos para plotagem de gráficos.
     
     #Prints
     if(Prt ==  True):
         print("\nDinâmica de Voo")
         print("Tempo que o sistema leva para atingir o regime permanente:",t1,"s")
-        print("Tempo que o sistema leva para atingir o solo",t2,"s")
+        print("Tempo que o sistema leva para atingir o solo:",t2+tr,"s")
      
     ###
     t1 = int(t1*100)/100 #truncando o valor do tempo para duas casas decimais.
@@ -486,7 +502,7 @@ def main(m, Vc, Cd_f, S_f, w = 10, Ap = 1000, R = 3, Caps = True, Ret = False, P
     #Função velocidade de descida pelo tempo.
     #Plot
     if (Plt == True):
-        plt.title("Velocidade de descida por tempo")
+        plt.title("Velocidade de descida por tempo (PA)")
         plt.xlabel ('Tempo (s)')
         plt.ylabel ('Vel. de descida (m/s)')
         plt.grid(True)
@@ -504,7 +520,10 @@ def main(m, Vc, Cd_f, S_f, w = 10, Ap = 1000, R = 3, Caps = True, Ret = False, P
     s = np.zeros(len(t0)) #array que vai receber as imagens.
     
     for i in range(len(t0)):
-        s[i] = H_t(t0[i]) #cálculo das imagens.
+        if (t0[i]<tr):
+            s[i] = h_t(t0[i]) #cálculo das imagens com o paraquedas fechado.
+        else:
+            s[i] = H_t(t0[i]- tr) #cálculo das imagens com o paraquedas aberto.
     
     #Plot
     if (Plt == True):
@@ -513,7 +532,7 @@ def main(m, Vc, Cd_f, S_f, w = 10, Ap = 1000, R = 3, Caps = True, Ret = False, P
         plt.ylabel ('Altura (m)')
         plt.grid(True)
         plt.plot(t0,s,'b')
-        plt.plot(t2,H_t(t2),'ro', label = str(int(t2)))
+        plt.plot(t2+tr,H_t(t2),'ro', label = str(int(t2+tr)))
         plt.legend(loc = 7)
         
         plt.show()
@@ -576,7 +595,7 @@ def main(m, Vc, Cd_f, S_f, w = 10, Ap = 1000, R = 3, Caps = True, Ret = False, P
         plt.show()
     
     if (Ret == True):
-        return D[0], C, A, Fv[0:2], Fpd_t, Fd_h, V_m, V_dm, H_t, V_t, Fd_t
+        return D[0], C, A, Fv[0:2], Fpd_t, Fd_h, V_m, V_dm, h_t, H_t, V_t, Fd_t
     
     
     
