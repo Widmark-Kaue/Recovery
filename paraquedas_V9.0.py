@@ -502,7 +502,7 @@ def main(m, Vc, Cd_f, S_f, w = 10, Ap = 1000, R = 500, Caps = True, Ret = False,
     #Função velocidade de descida pelo tempo.
     #Plot
     if (Plt == True):
-        plt.title("Velocidade de descida por tempo (PA)")
+        plt.title("Velocidade de descida por tempo ")
         plt.xlabel ('Tempo (s)')
         plt.ylabel ('Vel. de descida (m/s)')
         plt.grid(True)
